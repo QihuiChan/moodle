@@ -3794,6 +3794,7 @@ class assign {
             return $submission;
         }
         if ($create) {
+            // sleep(30);
             $submission = new stdClass();
             $submission->assignment   = $this->get_instance()->id;
             $submission->userid       = $userid;
@@ -3808,21 +3809,25 @@ class assign {
             // Work out if this is the latest submission.
             $submission->latest = 0;
             $params = array('assignment'=>$this->get_instance()->id, 'userid'=>$userid, 'groupid'=>0);
+            $result = $DB->get_records('assign_submission', $params, 'attemptnumber DESC', 'attemptnumber, status', 0, 1);
+            $latestsubmission = null;
+            if ($result) {
+                $latestsubmission = reset($result);
+            }
             if ($attemptnumber == -1) {
                 // This is a new submission so it must be the latest.
                 $submission->latest = 1;
             } else {
                 // We need to work this out.
-                $result = $DB->get_records('assign_submission', $params, 'attemptnumber DESC', 'attemptnumber', 0, 1);
-                $latestsubmission = null;
-                if ($result) {
-                    $latestsubmission = reset($result);
-                }
                 if (empty($latestsubmission) || ($attemptnumber > $latestsubmission->attemptnumber)) {
                     $submission->latest = 1;
                 }
             }
             if ($submission->latest) {
+                if ($latestsubmission && $latestsubmission->status == ASSIGN_SUBMISSION_STATUS_NEW &&
+                    $latestsubmission->attemptnumber == $submission->attemptnumber ) {
+                        return $latestsubmission;
+                    }
                 // This is the case when we need to set latest to 0 for all the other attempts.
                 $DB->set_field('assign_submission', 'latest', 0, $params);
             }
