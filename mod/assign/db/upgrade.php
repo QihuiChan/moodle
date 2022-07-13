@@ -151,13 +151,16 @@ function xmldb_assign_upgrade($oldversion) {
         }
 
         if (count($idstofix)) {
-            $placeholder = '';
-            for ($i = 0; $i < count($idstofix); $i++) {
-                $placeholder .=  ($i == count($idstofix) - 1) ? "?" : "?,";
-            }
+            // $placeholder = '';
+            // for ($i = 0; $i < count($idstofix); $i++) {
+            //     $placeholder .=  ($i == count($idstofix) - 1) ? "?" : "?,";
+            // }
+
+            [$insql, $inparams] = get_in_or_equal($idstofix);
+
             $DB->execute(
-                "UPDATE {assign_submission} SET latest = 1 WHERE id in ($placeholder)",
-                $idstofix
+                "UPDATE {assign_submission} SET latest = 1 WHERE id $insql",
+                $inparams
             );
         }
 
