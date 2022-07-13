@@ -115,5 +115,54 @@ function xmldb_assign_upgrade($oldversion) {
     // Automatically generated Moodle v4.0.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2022071200) {
+        $submissions = $DB->get_records('assign_submission', null, '', 'id, assignment, userid, groupid, attemptnumber, latest');
+        $latestbyassignanduser = [];
+        foreach ($submissions as $submission) {
+            $assignid = $submission->assignment;
+            $userid = $submission->userid;
+
+            $id = isset($latestbyassignanduser[$assignid][$userid]) ? $latestbyassignanduser[$assignid][$userid] : 0;
+            if ($submission->id > $id) {
+                $latestbyassignanduser[$assignid][$userid] = $submission->id;
+            }
+        }
+
+        $latestbyassignandgroup = [];
+        foreach ($submissions as $submission) {
+            $assignid = $submission->assignment;
+            $groupid = $submission->groupid;
+
+            $id = isset($latestbyassignandgroup[$assignid][$groupid]) ? $latestbyassignandgroup[$assignid][$groupid] : 0;
+            if ($submission->id > $id) {
+                $latestbyassignandgroup[$assignid][$groupid] = $submission->id;
+            }
+        }
+
+        $allmostrecentidsuser = array_merge(...$latestbyassignanduser);
+        $allmostrecentidsgroup = array_merge(...$latestbyassignandgroup);
+        $allmostrecentids = array_unique(array_merge($allmostrecentidsgroup, $allmostrecentidsuser), SORT_REGULAR);
+
+        $idstofix = [];
+        foreach ($allmostrecentids as $id) {
+            if ($submissions[$id]->latest == 0) {
+                $idstofix[] = $id;
+            }
+        }
+
+        if (count($idstofix)) {
+            $placeholder = '';
+            for ($i = 0; $i < count($idstofix); $i++) {
+                $placeholder .=  ($i == count($idstofix) - 1) ? "?" : "?,";
+            }
+            $DB->execute(
+                "UPDATE {assign_submission} SET latest = 1 WHERE id in ($placeholder)",
+                $idstofix
+            );
+        }
+
+        // Assignment savepoint reached.
+        upgrade_mod_savepoint(true, 2022071200, 'assign');
+    }
     return true;
 }
