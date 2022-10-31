@@ -2177,3 +2177,23 @@ class bootstrap_renderer {
         return $html;
     }
 }
+
+/**
+ * Get the task warning runtime
+ *
+ * @return int task warning runtime
+ */
+function task_runtime_warn() {
+    global $CFG;
+    return $CFG->taskruntimewarn ?? 12 * HOURSECS;
+}
+
+/**
+ * Get the task error runtime
+ *
+ * @return int task error runtime
+ */
+function task_runtime_error() {
+    global $CFG;
+    return $CFG->taskruntimeerror ?? DAYSECS;
+}
