@@ -428,12 +428,4 @@ abstract class scheduled_task extends task_base {
 
         return $nexttime;
     }
-
-    /**
-     * Get a descriptive name for this task (shown to admins).
-     *
-     * @return string
-     */
-    public abstract function get_name();
-
 }

@@ -24,6 +24,10 @@
  */
 namespace core\task;
 
+use core_component;
+use core_plugin_manager;
+use core\check\result;
+
 /**
  * Abstract class for common properties of scheduled_task and adhoc_task.
  *
@@ -58,6 +62,13 @@ abstract class task_base {
 
     /** @var int $pid - PHP process ID that is running the task */
     private $pid = null;
+
+    /**
+     * Get a descriptive name for the task (shown to admins)
+     *
+     * @return string
+     */
+    abstract public function get_name();
 
     /**
      * Set the current lock for this task.
@@ -230,4 +241,31 @@ abstract class task_base {
     public function get_pid() {
         return $this->pid;
     }
+
+    /**
+     * Returns if the task has been running for too long
+     * @return result
+     */
+    public function get_runtime_result() {
+        $runtime = time() - $this->timestarted;
+        $runtimeerror = task_runtime_error();
+        $runtimewarn = task_runtime_warn();
+
+        $status = result::OK;
+        $details = '';
+
+        if ($runtime > $runtimewarn) {
+            $status = result::WARNING;
+            $details = get_string('slowtask', 'tool_task', format_time($runtimewarn));
+        }
+
+        if ($runtime > $runtimeerror) {
+            $status = result::ERROR;
+            $details = get_string('slowtask', 'tool_task', format_time($runtimeerror));
+        }
+
+        // This result is aggregated with other running tasks checks before display.
+        return new result($status, '', $details);
+    }
+
 }
